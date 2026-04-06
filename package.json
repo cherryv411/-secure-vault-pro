@@ -1,15 +1,13 @@
 {
   "name": "secure-vault-pro",
   "version": "1.0.0",
-  "description": "Secure password manager with AI insights and auto-scaling infrastructure.",
+  "description": "Secure password manager",
   "main": "dist/server.js",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
     "start": "node dist/server.js",
-    "preview": "vite preview",
-    "prisma:generate": "prisma generate",
-    "prisma:push": "prisma db push"
+    "prisma:generate": "prisma generate"
   },
   "dependencies": {
     "@prisma/client": "^5.0.0",
@@ -31,3 +29,4 @@
     "typescript": "^5.0.0",
     "vite": "^5.0.0"
   }
+}
