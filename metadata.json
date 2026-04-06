@@ -1,0 +1,7 @@
+{
+  "name": "SecureVault Pro",
+  "description": "A comprehensive, secure, and intelligent vault for managing passwords, financial records, identities, and sensitive documents with AI-powered insights.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
