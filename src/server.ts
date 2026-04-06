@@ -1,9 +1,12 @@
 import express from 'express';
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcrypt';
+import cors from 'cors';
 
 const prisma = new PrismaClient();
 const app = express();
+
+app.use(cors());
 app.use(express.json());
 
 app.post('/api/register', async (req, res) => {
