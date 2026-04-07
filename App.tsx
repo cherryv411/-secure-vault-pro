@@ -1,5 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
+import React, { useState, useRef } from 'react';
 
 const KeyVault = {
   users: [] as any[],
@@ -22,17 +21,7 @@ export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [view, setView] = useState<'login' | 'signup' | 'mfa' | 'face' | 'otp'>('login');
   const [userProfile, setUserProfile] = useState<any>(null);
-  const [load, setLoad] = useState(45);
   const videoRef = useRef<HTMLVideoElement>(null);
-
-  useEffect(() => {
-    if (isAuthenticated) {
-      const interval = setInterval(() => {
-        setLoad(prev => Math.min(100, Math.max(20, prev + (Math.random() * 20 - 10))));
-      }, 2000);
-      return () => clearInterval(interval);
-    }
-  }, [isAuthenticated]);
 
   const handleLogin = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -51,13 +40,24 @@ export default function App() {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     const data = Object.fromEntries(formData.entries());
+    
     if (KeyVault.isDuplicate(data.email as string, data.mobile as string)) {
-      alert("Error: Email or Mobile Number is already registered.");
+      alert("Error: Email or Mobile Number is already registered in our system.");
       return;
     }
+    
     KeyVault.saveUser(data);
     alert("Account registered successfully!");
     setView('login');
+  };
+
+  const startFaceScan = async () => {
+    setView('face');
+    try {
+      const s = await navigator.mediaDevices.getUserMedia({ video: true });
+      if (videoRef.current) videoRef.current.srcObject = s;
+      setTimeout(() => { setIsAuthenticated(true); s.getTracks().forEach(t => t.stop()); }, 3000);
+    } catch { alert("Camera access denied."); setView('mfa'); }
   };
 
   return (
@@ -86,47 +86,33 @@ export default function App() {
                 <select name="mfaMethod" className="w-full p-2 border rounded-lg">
                   <option value="otp">Authenticator App</option>
                   <option value="face">Face Recognition</option>
+                  <option value="sms">SMS OTP</option>
+                  <option value="email">Email OTP</option>
                 </select>
                 <button type="submit" className="w-full bg-indigo-600 text-white py-3 rounded-lg font-bold">Sign Up</button>
+                <button type="button" onClick={() => setView('login')} className="w-full text-slate-500 text-sm">Back to Login</button>
               </form>
-            ) : (
+            ) : view === 'mfa' ? (
               <div className="text-center space-y-4">
-                <h2 className="font-bold">Verify Identity</h2>
-                <button onClick={() => setIsAuthenticated(true)} className="w-full bg-indigo-600 text-white py-3 rounded-lg">Proceed</button>
+                <h2 className="font-bold">Verify via {userProfile?.mfaMethod?.toUpperCase()}</h2>
+                <button onClick={() => userProfile.mfaMethod === 'face' ? startFaceScan() : setView('otp')} className="w-full bg-indigo-600 text-white py-3 rounded-lg">Proceed</button>
               </div>
+            ) : view === 'face' ? (
+              <video ref={videoRef} autoPlay playsInline className="w-full rounded-lg bg-black h-48" />
+            ) : (
+              <form onSubmit={(e) => { e.preventDefault(); setIsAuthenticated(true); }} className="space-y-4">
+                <input maxLength={6} className="w-full p-3 border text-center text-2xl" placeholder="Enter Code" required />
+                <button type="submit" className="w-full bg-indigo-600 text-white py-3 rounded-lg">Verify</button>
+              </form>
             )}
           </div>
         </div>
       ) : (
-        <main className="p-6 space-y-8">
-          <section>
-            <h1 className="text-2xl font-bold mb-4">Public-Facing Load Balancer</h1>
-            <div className="bg-white p-6 rounded-xl shadow border border-slate-200">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="font-semibold text-slate-700">Global Traffic Distribution</h3>
-                <span className={`px-3 py-1 rounded-full text-xs font-bold ${load > 80 ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
-                  {load > 80 ? 'SCALING ACTIVE' : 'HEALTHY'}
-                </span>
-              </div>
-              <div className="h-48">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={[{ load }, { load: load + 5 }]}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" />
-                    <YAxis />
-                    <Tooltip />
-                    <Line type="monotone" dataKey="load" stroke="#4f46e5" strokeWidth={3} />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-          </section>
-          <section>
-            <h2 className="text-xl font-bold mb-4">Vault Items</h2>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              {ALL_CATEGORIES.map(item => <div key={item} className="bg-white p-4 rounded shadow text-sm">{item}</div>)}
-            </div>
-          </section>
+        <main className="p-4">
+          <h1 className="text-2xl font-bold mb-4">Vault</h1>
+          <div className="grid grid-cols-2 gap-3">
+            {ALL_CATEGORIES.map(item => <div key={item} className="bg-white p-4 rounded shadow text-sm">{item}</div>)}
+          </div>
         </main>
       )}
     </div>
